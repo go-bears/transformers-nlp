@@ -88,7 +88,8 @@ def finetune(reading_params_path, finetune_corpus_path, pretrain_dataset, block_
         lr_decay=True,
         warmup_tokens=512 * 20,
         final_tokens=200 * len(pretrain_dataset) * block_size,
-        num_workers=4)
+        num_workers=4
+        )
 
     trainer_obj = Trainer(model, finetune_dataset, None, tconf)
 
@@ -131,8 +132,7 @@ def pretrain(pretrain_dataset, block_size, model):
         lr_decay,
         warmup_tokens,
         final_tokens,
-        num_workers
-        )
+        num_workers)
 
     trainer_obj = Trainer(model, pretrain_dataset, None, tconf)
     

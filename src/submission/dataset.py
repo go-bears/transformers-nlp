@@ -2,6 +2,7 @@ import random
 import torch
 from torch.utils.data import Dataset
 import argparse
+import numpy as np
 
 """
 The input-output pairs (x, y) of the NameDataset are of the following form:
@@ -175,9 +176,52 @@ class CharCorruptionDataset(Dataset):
         ### [part e]: see spec above
 
         ### START CODE HERE
+        # 0 Use the idx argument of __getitem__ to retrieve the element of self.data
+        # at the given index. We'll call the resulting data entry a document.
+        document = self.data[idx]
+
+        #1. Randomly truncate the document to a length no less than 4 characters,
+#           and no more than int(self.block_size*7/8) characters.
+
+        if len(document) == 0:
+            x = self.PAD_CHAR * (self.block_size - 1)
+            y = self.PAD_CHAR * (self.block_size - 1)
+            x = torch.tensor([self.stoi[c] for c in x], dtype=torch.long)
+            y = torch.tensor([self.stoi[c] for c in y], dtype=torch.long)
+
+        else:
+            trunc_length = random.randint(4, int(self.block_size * 7/8))
+            if trunc_length > len(document):
+                truncated_document = document
+            else:
+                truncated_document = document[0:trunc_length]
+            masked_length = np.random.poisson(int(self.masking_percent * len(truncated_document)))
+            if masked_length > len(truncated_document):
+                masked_length = len(truncated_document)
+            diff = len(truncated_document) - masked_length
+
+            try:
+                start_idx = random.randint(0, diff)
+            except ValueError:
+                print(f' document length = {len(document)}')
+                print(f"truncated doc length = {len(truncated_document)}")
+                print(f"masked length = {masked_length}")
+                print(f'diff = {diff}')
+                start_idx = 0
+            prefix = truncated_document[0:start_idx]
+            masked_content = truncated_document[start_idx:start_idx + masked_length]
+            suffix = truncated_document[start_idx + masked_length:]
+            masked_string = prefix + self.MASK_CHAR + suffix + self.MASK_CHAR + masked_content + self.MASK_CHAR
+            num_pads = self.block_size - len(masked_string)
+            masked_string += self.PAD_CHAR * num_pads
+            x = masked_string[:-1]
+            y = masked_string[1:]
+            x = torch.tensor([self.stoi[c] for c in x], dtype=torch.long)
+            y = torch.tensor([self.stoi[c] for c in y], dtype=torch.long)
+
         ### END CODE HERE
 
-        raise NotImplementedError
+        return x,y
 
 """
 Code under here is strictly for your debugging purposes; feel free to modify
