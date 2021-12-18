@@ -117,22 +117,17 @@ def pretrain(pretrain_dataset, block_size, model):
     tconf = None #TrainerConfig object (see trainer.py for more details)
 
     ### START CODE HERE
-    max_epochs=650
-    batch_size=128
-    learning_rate=6e-3
-    lr_decay=True
-    warmup_tokens=512*20
-    final_tokens=200*len(pretrain_dataset)*block_size
-    num_workers=4
+
 
     tconf = TrainerConfig(
-        max_epochs,
-        batch_size,
-        learning_rate,
-        lr_decay,
-        warmup_tokens,
-        final_tokens,
-        num_workers)
+        max_epochs=650,
+        batch_size=128,
+        learning_rate=6e-3,
+        lr_decay=True,
+        warmup_tokens=512*20,
+        final_tokens=200*len(pretrain_dataset)*block_size,
+        num_workers=4
+        )
 
     trainer_obj = Trainer(model, pretrain_dataset, None, tconf)
     
