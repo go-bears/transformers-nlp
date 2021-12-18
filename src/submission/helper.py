@@ -3,15 +3,19 @@ from .dataset import NameDataset
 from .trainer import Trainer, TrainerConfig
 
 import torch
+import torch.nn as nn
 import random
 random.seed(0)
+
 
 def initialize_vanilla_model(mconf):
     attention_model = None
     ### TODO:
     ### [part c]: Make some model here
 
+
     ### START CODE HERE
+    attention_model = GPT(mconf)
     ### END CODE HERE
     return attention_model
 
@@ -21,6 +25,10 @@ def initialize_synthesizer_model(mconf):
     ### [part g]: Make some other model here
 
     ### START CODE HERE
+    mconf.synthesizer=True
+    attention_model = GPT(mconf)
+
+
     ### END CODE HERE
     return attention_model
 
@@ -60,7 +68,30 @@ def finetune(reading_params_path, finetune_corpus_path, pretrain_dataset, block_
 
     trainer_obj = None #Trainer object (see trainer.py for more details)
     tconf = None #TrainerConfig object (see trainer.py for more details)
+
     ### START CODE HERE
+    text = open(finetune_corpus_path, encoding='utf-8').read()
+    finetune_dataset = NameDataset(text, pretrain_dataset)
+
+    if reading_params_path is None:
+        max_epochs=75
+
+    else:
+        pretrained_model = torch.load(reading_params_path, map_location=torch.device('cpu'))
+        model.load_state_dict(pretrained_model)
+        max_epochs=10
+
+    tconf = TrainerConfig(
+        max_epochs=max_epochs,
+        batch_size=256,
+        learning_rate=6e-4,
+        lr_decay=True,
+        warmup_tokens=512 * 20,
+        final_tokens=200 * len(pretrain_dataset) * block_size,
+        num_workers=4)
+
+    trainer_obj = Trainer(model, finetune_dataset, None, tconf)
+
     ### END CODE HERE
     return tconf, trainer_obj
 
@@ -85,6 +116,26 @@ def pretrain(pretrain_dataset, block_size, model):
     tconf = None #TrainerConfig object (see trainer.py for more details)
 
     ### START CODE HERE
+    max_epochs=650
+    batch_size=128
+    learning_rate=6e-3
+    lr_decay=True
+    warmup_tokens=512*20
+    final_tokens=200*len(pretrain_dataset)*block_size
+    num_workers=4
+
+    tconf = TrainerConfig(
+        max_epochs,
+        batch_size,
+        learning_rate,
+        lr_decay,
+        warmup_tokens,
+        final_tokens,
+        num_workers
+        )
+
+    trainer_obj = Trainer(model, pretrain_dataset, None, tconf)
+    
     ### END CODE HERE
     return tconf, trainer_obj
 
@@ -95,5 +146,8 @@ def train(model, writing_params_path, trainer_obj):
     ### Note: trainer_obj is of type Trainer (see trainer.py for more details)
 
     ### START CODE HERE
+    trainer_obj.train()
+    torch.save(model.state_dict(), writing_params_path)
+
     ### END CODE HERE
     return
